@@ -6,7 +6,7 @@ def drop_other_teams(df: object, team_id: int) -> object:
             df.drop(index,inplace=True)
     return df
 
-#%%
+
 #Create a column with win or loss per box score
 def win_or_loss(df: object, team_id: int) -> object:
     for index, row in df.iterrows():
