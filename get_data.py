@@ -15,7 +15,7 @@ def call_api(params: str) -> object:
     response = httpx.get(f"{url}{params}", headers=headers)
     nested_json = response.json()
     return nested_json
-#%%
+
 def get_team(team_id: str) -> object:
     team = call_api(f"/teams?id={team_id}&league=12&season=2024-2025")
     return team
