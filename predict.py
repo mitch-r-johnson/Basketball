@@ -1,6 +1,6 @@
 import model
 
-#Dates of the current NBA season
+#Predicting the current season
 current_season_df = model.concat_predictions("2024-10-22","2025-02-24")
 print(current_season_df)
 

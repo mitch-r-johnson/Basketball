@@ -1,21 +1,23 @@
-#%%
 import httpx
-import pandas as pd
 from datetime import date
-#%%
+from dotenv import find_dotenv,load_dotenv
+
 today = date.today()
 formatted_date = today.strftime("%Y-%m-%d")
+
+dotenv_path = find_dotenv()
+load_dotenv(dotenv_path)
 
 def call_api(params: str) -> object:
     headers = {
         'x-rapidapi-host': "v1.basketball.api-sports.io",
-        'x-rapidapi-key': "db8819fa204d3f23a50ba996ff64ae83"
+        'x-rapidapi-key': f"{API_KEY}"
     }
     url = "http://v1.basketball.api-sports.io"
     response = httpx.get(f"{url}{params}", headers=headers)
     nested_json = response.json()
     return nested_json
-#%%
+
 def get_team(team_id: str) -> object:
     team = call_api(f"/teams?id={team_id}&league=12&season=2024-2025")
     return team
@@ -66,7 +68,7 @@ def get_current_season_box_scores(team_id: str) -> object:
 def get_current_season_games(team_id: str) -> object:
     current_season = get_games("2024-2025",team_id)
     return current_season
-#%%
+
 def transform_game(data_list: object) -> object:
     """
     Extracts, flattens, and indexes all data under the 'response' key by 'id'.

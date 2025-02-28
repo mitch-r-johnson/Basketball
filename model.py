@@ -1,9 +1,7 @@
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import get_data
-import transform_dfs
 from datetime import date, timedelta, datetime
 
 today = date.today()
@@ -23,34 +21,33 @@ def get_matchups(data):
 
     return matchup_dict
 
-def recent_four_box_scores(team_id,date):
+def recent_six_box_scores(team_id, date):
 
     if team_id in teams:
 
         df = pd.read_csv(f"/Users/mitchjohnson/PycharmProjects/Basketball/Data/{team_id}-current.csv")
-        columns_to_drop = ['Unnamed: 0','game_id','teams_home_id','teams_away_id','league_season','teams_home_name','teams_away_name','team_id','W/L']
+        columns_to_drop = ['Unnamed: 0','game_id','teams_home_id','teams_away_id','league_season','teams_home_name','teams_away_name','team_id','W/L',"scores_home_total", "scores_away_total"]
         model_data_df = df.drop(columns_to_drop,axis=1)
         model_data_df['date'] = pd.to_datetime(model_data_df['date'], utc=True)
         given_date = pd.Timestamp(date, tz='UTC')
-        recent_four_df = model_data_df[model_data_df['date'] <= given_date].sort_values(by='date', ascending=False).head(4)
-        recent_four_drop_date = recent_four_df.drop('date',axis=1)
-        recent_four_averages = recent_four_drop_date.mean(numeric_only=True)
-        recent_four_averages_df = pd.DataFrame(recent_four_averages).T
-        return recent_four_averages_df
+        recent_six_df = model_data_df[model_data_df['date'] <= given_date].sort_values(by='date', ascending=False).head(6)
+        recent_six_drop_date = recent_six_df.drop('date',axis=1)
+        recent_six_averages = recent_six_drop_date.mean(numeric_only=True)
+        recent_six_averages_df = pd.DataFrame(recent_six_averages).T
+        return recent_six_averages_df
 
 def make_prediction(team_id,box_score):
 
     if team_id in teams:
 
         df = pd.read_csv(f"/Users/mitchjohnson/PycharmProjects/Basketball/Data/{team_id}-historical.csv")
-        columns_to_drop = ['Unnamed: 0','game_id','teams_home_id','teams_away_id','date','league_season','teams_home_name','teams_away_name']
+        columns_to_drop = ['Unnamed: 0','game_id','teams_home_id','teams_away_id','date','league_season','teams_home_name','teams_away_name',"scores_home_total", "scores_away_total"]
         model_data_df = df.drop(columns_to_drop,axis=1)
         X = model_data_df.drop(['W/L','team_id'],axis=1)
         y = model_data_df['W/L']
         X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=.3)
         logmodel = LogisticRegression(max_iter=1200)
         logmodel.fit(X_train,y_train)
-        predictions = logmodel.predict(box_score)
         probabilities = logmodel.predict_proba(box_score)
         return probabilities[0][1]
 
@@ -58,8 +55,8 @@ def pick_winners(matchups,date):
     prediction_dict = {}
     for game, teams in matchups.items():
         # Get predictions for both teams
-        prediction1 = make_prediction(teams[0], recent_four_box_scores(teams[0],date))
-        prediction2 = make_prediction(teams[1], recent_four_box_scores(teams[1],date))
+        prediction1 = make_prediction(teams[0], recent_six_box_scores(teams[0], date))
+        prediction2 = make_prediction(teams[1], recent_six_box_scores(teams[1], date))
 
         # Convert None values to 0 before comparison
         if prediction1 is None:
@@ -121,23 +118,6 @@ def get_unique_team_ids(games_data):
         team_ids.add(game['teams']['away']['id'])
 
     return sorted(team_ids)
-
-# Example usage
-games_json = {
-    'get': 'games',
-    'parameters': {'date': '2025-02-12', 'season': '2024-2025', 'league': '12'},
-    'errors': [],
-    'results': 4,
-    'response': [
-        {'id': 414637, 'teams': {'home': {'id': 154}, 'away': {'id': 159}}},
-        {'id': 414638, 'teams': {'home': {'id': 143}, 'away': {'id': 151}}},
-        {'id': 414639, 'teams': {'home': {'id': 136}, 'away': {'id': 140}}},
-        {'id': 414640, 'teams': {'home': {'id': 155}, 'away': {'id': 146}}},
-    ]
-}
-
-# Get unique team IDs
-unique_team_ids = get_unique_team_ids(games_json)
 
 def get_winning_teams(game_data):
     """
